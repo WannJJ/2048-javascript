@@ -11,4 +11,4 @@
 ## Demo
 You can try out online immediately at <link>https://WannJJ.github.io/</link>!
 ## Game play
-![Gameplay](Screenshots/Capture2048.JPG)
+![Gameplay](Screenshots/2048Capture.JPG)
