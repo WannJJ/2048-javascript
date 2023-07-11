@@ -1,11 +1,20 @@
 score = 0;
-bestScore = 0;
+// Use cookie to store bestScore. BestScore will not be lost when refreshing page
+// Cannot set cookie by Chrome without http server
+if (document.cookie == "") {
+  bestScore = 0;
+} else {
+  arr = document.cookie.split("=");
+  bestScore = parseInt(arr[1]);
+}
+
 side = 4;
 board = new Array(4).fill(0).map(() => new Array(4).fill(0));
 colors = ['#cdc1b4', '#eee4da', '#ede0c8', '#f2b179', '#f59563', '#f67c5f', '#f65e3b', '#edcf72', '#edcc61', '#edc850', '#edc53f', '#edc22e'];
 t = 0.1;
+undoBoard = new Array(4).fill(0).map(() => new Array(4).fill(0));
 
-cell1 = document.getElementsByClassName("cell1")[0];
+cell1 = document.getElementsByClassName(" cell1")[0];
 cell2 = document.getElementsByClassName("cell2")[0];
 cell3 = document.getElementsByClassName("cell3")[0];
 cell4 = document.getElementsByClassName("cell4")[0];
@@ -21,24 +30,20 @@ cell13 = document.getElementsByClassName("cell13")[0];
 cell14 = document.getElementsByClassName("cell14")[0];
 cell15 = document.getElementsByClassName("cell15")[0];
 cell16 = document.getElementsByClassName("cell16")[0];
-
 cellBoard = [
-  [cell1, cell2, cell3, cell4],
+  [cell1, cell2, cell3,
+    cell4
+  ],
   [cell5, cell6, cell7, cell8],
   [cell9, cell10, cell11, cell12],
   [cell13, cell14, cell15, cell16],
 ];
-
-
-
 displayScore = document.getElementById("Score");
 displayBestScore = document.getElementById("Best");
-
-
-/*
-Add new cell, update score, check if game is over
- */
+/* Add new cell, update score, check if
+   game is over */
 function draw() {
+  displayScore.innerHTML = "Score<br>" + score;
   for (let i = 0; i < side; i++) {
     for (let j = 0; j < side; j++) {
       if (board[i][j] == 0) {
@@ -47,9 +52,7 @@ function draw() {
       } else {
         cellBoard[i][j].innerHTML = "" + board[i][j];
         cellBoard[i][j].style.zIndex = 10;
-
       }
-
       cellBoard[i][j].style.background = getColor(board[i][j]);
       if (board[i][j] >= 8) {
         cellBoard[i][j].style.color = 'white';
@@ -66,10 +69,31 @@ function draw() {
 
     }
   }
+
 }
 
-function updateGame() {
+//Add cookies
+function writeCookies() {
+  // let expires = new Date();
+  // expires.setSeconds(expires.getSeconds() + maxAge);
 
+
+  let cookie = "bestScore=" + bestScore + ";";
+  // cookie += "Expires=" + expires.toUTCString() + ";";
+  // cookie += "Path=/;";
+  document.cookie = cookie;
+  // console.log("cookie:" + document.cookie);
+}
+
+function readCookies() {
+  // var allCookies = documment.cookie;
+  arr = document.cookie.split("=");
+  console.log("best: " + arr[1]);
+
+}
+
+
+function updateGame() {
   emptyCells = [];
   for (let i = 0; i < side; i++) {
     for (let j = 0; j < side; j++) {
@@ -91,36 +115,38 @@ function updateGame() {
 
   if (bestScore < score) {
     bestScore = score;
+    writeCookies();
   }
-
   displayScore.innerHTML = "Score<br>" + score;
   displayBestScore.innerHTML = "Best<br>" + bestScore;
 
-  draw();
 
+  draw();
   // End game
   if (emptyCells.length <= 1 && !checkGame()) {
     document.getElementById("End").style.display = "block";
   }
-
 }
-
 
 function left() {
   change = false;
+  backedup = false;
   for (let i = 0; i < side; i++) {
     idx_last = -1;
     last_number = -1;
-
     for (let j = 0; j < side; j++) {
       if (board[i][j] == last_number) {
+        if (!backedup) {
+          backup();
+          backedup = true;
+        }
         //move cell j to idx_last and merge
         board[i][j] = 0;
         last_number *= 2;
         board[i][idx_last] = last_number;
         score += last_number;
-
-        cellBoard[i][j].style.animation = "moveRight" + (idx_last + 1) + " " + t + "s linear";
+        cellBoard[i][j].style.animation = "moveRight" + (idx_last + 1) + " " + t +
+          "s linear";
         setTimeout(() => {
           cellBoard[i][j].style.animation = "";
         }, t * 1000);
@@ -128,6 +154,11 @@ function left() {
         last_number = -1;
         change = true;
       } else if (board[i][j] != 0 && board[i][idx_last + 1] == 0) {
+        if (!backedup) {
+          backup()
+          backedup = true;
+        }
+
         //move cell j to idx_last+1
         board[i][idx_last + 1] = board[i][j];
         last_number = board[i][j];
@@ -157,12 +188,18 @@ function left() {
 
 function right() {
   change = false;
+  backedup = false;
+
   for (let i = 0; i < side; i++) {
     idx_last = side;
     last_number = -1;
-
     for (let j = side - 1; j >= 0; j--) {
       if (board[i][j] == last_number) {
+        if (!backedup) {
+          backup()
+          backedup = true;
+        }
+
         board[i][j] = 0;
         last_number *= 2;
         board[i][idx_last] = last_number;
@@ -176,6 +213,11 @@ function right() {
         last_number = -1;
         change = true;
       } else if (board[i][j] != 0 && board[i][idx_last - 1] == 0) {
+        if (!backedup) {
+          backup()
+          backedup = true;
+        }
+
         board[i][idx_last - 1] = board[i][j];
         last_number = board[i][j];
 
@@ -204,12 +246,18 @@ function right() {
 
 function down() {
   change = false;
+  backedup = false;
+
   for (let j = 0; j < side; j++) {
     idx_last = side;
     last_number = -1;
-
     for (let i = side - 1; i >= 0; i--) {
       if (board[i][j] == last_number) {
+        if (!backedup) {
+          backup()
+          backedup = true;
+        }
+
         board[i][j] = 0;
         last_number *= 2;
         board[idx_last][j] = last_number;
@@ -223,6 +271,11 @@ function down() {
         last_number = -1;
         change = true;
       } else if (board[i][j] != 0 && board[idx_last - 1][j] == 0) {
+        if (!backedup) {
+          backup()
+          backedup = true;
+        }
+
         board[idx_last - 1][j] = board[i][j];
         last_number = board[i][j];
 
@@ -251,17 +304,22 @@ function down() {
 
 function up() {
   change = false;
+  backedup = false;
+
   for (let j = 0; j < side; j++) {
     idx_last = -1;
     last_number = -1;
-
     for (let i = 0; i < side; i++) {
       if (board[i][j] == last_number) {
+        if (!backedup) {
+          backup();
+          backedup = true;
+        }
         board[i][j] = 0;
         last_number *= 2;
         board[idx_last][j] = last_number;
-        score += last_number;
-
+        score
+          += last_number;
         cellBoard[i][j].style.animation = "moveDown" + (idx_last + 1) + " " + t + "s linear";
         setTimeout(() => {
           cellBoard[i][j].style.animation = "";
@@ -270,6 +328,11 @@ function up() {
         last_number = -1;
         change = true;
       } else if (board[i][j] != 0 && board[idx_last + 1][j] == 0) {
+        if (!backedup) {
+          backup()
+          backedup = true;
+        }
+
         board[idx_last + 1][j] = board[i][j];
         last_number = board[i][j];
 
@@ -326,14 +389,38 @@ function getColor(number) {
   }
 }
 
+function backup() {
+  undoScore = score;
+  for (i = 0; i < side; i++) {
+    for (j = 0; j < side; j++) {
+      undoBoard[i][j] = board[i][j];
+    }
+  }
+
+
+
+}
+
+function undoGame() {
+  for (i = 0; i < side; i++) {
+    for (j = 0; j < side; j++) {
+      board[i][j] = undoBoard[i][j];
+    }
+  }
+  score = undoScore;
+  document.getElementById("End").style.display = "none";
+  draw();
+
+}
+
 function checkGame() {
   for (let i = 0; i < side; i++) {
     for (let j = 0; j < side; j++) {
       if (board[i][j] == 0) {
-        return true;
+        return
+        true;
       }
-      if (i + 1 < side && board[i][j] == board[i + 1][j] ||
-        j + 1 < side && board[i][j] == board[i][j + 1]) {
+      if (i + 1 < side && board[i][j] == board[i + 1][j] || j + 1 < side && board[i][j] == board[i][j + 1]) {
         return true;
       }
     }
@@ -341,16 +428,19 @@ function checkGame() {
   return false;
 }
 
-
 function startGame() {
   score = 0;
   board = new Array(4).fill(0).map(() => new Array(4).fill(0));
+  undoBoard = new Array(4).fill(0).map(() => new Array(4).fill(0));
+  undoScore = 0;
   document.getElementById("End").style.display = "none";
 
   updateGame();
 
 
 }
+
+
 
 document.addEventListener("DOMContentLoaded", () => {
   startGame();
@@ -363,17 +453,98 @@ window.addEventListener('keydown', (e) => {
   }
   switch (e.keyCode) {
     case 37:
+    case 65:
       left();
       break;
     case 38:
+    case 87:
       up();
       break;
     case 39:
+    case 68:
       right();
       break;
     case 40:
+    case 83:
       down();
       break;
+      //'U' for undo
+    case 85:
+      undoGame()
   }
 
+});
+
+//Touch events handling
+//TODO: prevent refreshing document while swiping down
+var xDown = null;
+var yDown = null;
+
+function getTouches(evt) {
+  return evt.touches || evtevt.originalEvent.touches;
+};
+
+function handleTouchStart(evt) {
+  const firstTouch = getTouches(evt)[0];
+  xDown = firstTouch.clientX;
+  yDown = firstTouch.clientY;
+
+};
+
+function handleTouchMove(evt) {
+  if (!xDown || !yDown) {
+    return;
+  }
+  var xUp = evt.touches[0].clientX;
+  var yUp = evt.touches[0].clientY;
+
+  var xDiff = xDown - xUp;
+  var yDiff = yDown - yUp;
+
+  if (Math.abs(xDiff) > Math.abs(yDiff)) {
+    if (xDiff >= 50) { //swipe left
+      left();
+    } else if (xDiff <= -50) {
+      right();
+    }
+  } else {
+    if (yDiff >= 50) { //swipe up
+      up();
+    } else if (yDiff <= -50) {
+      down();
+    }
+  }
+};
+document.addEventListener('touchstart', handleTouchStart, false);
+document.addEventListener('touchmove', handleTouchMove, false); //Mouse handling for non touch devices var mousedown=false;
+var xMDown = null;
+var yMDown = null;
+window.addEventListener("mousedown", function(e) {
+  mousedown = true;
+  xMDown = e.pageX;
+  yMDown = e.pageY;
+});
+window.addEventListener("mouseup", function(e) {
+  if (!xMDown || !yMDown) {
+    return;
+  }
+  var
+    xMUp = e.pageX;
+  var yMUp = e.pageY;
+  var xDiff = xMDown - xMUp;
+  var yDiff = yMDown - yMUp;
+  if (Math.abs(xDiff) > Math.abs(yDiff)) {
+    if (xDiff >= 50) { //swipe left
+      left();
+    } else if (xDiff <= -50) {
+      right();
+    }
+  } else {
+    if (yDiff >= 50) { //swipe up
+      up();
+    } else if (yDiff <= -50) {
+      down();
+    }
+  }
+  mousedown = false;
 });
