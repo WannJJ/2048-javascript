@@ -38,12 +38,13 @@ cellBoard = [
   [cell9, cell10, cell11, cell12],
   [cell13, cell14, cell15, cell16],
 ];
-displayScore = document.getElementById("Score");
-displayBestScore = document.getElementById("Best");
+displayScore = document.getElementById("Score-display");
+htmlAddedScore = document.getElementById('added-score');
+displayBestScore = document.getElementById("Best-display");
 /* Add new cell, update score, check if
    game is over */
 function draw() {
-  displayScore.innerHTML = "Score<br>" + score;
+  displayScore.innerHTML = score;
   for (let i = 0; i < side; i++) {
     for (let j = 0; j < side; j++) {
       if (board[i][j] == 0) {
@@ -117,8 +118,17 @@ function updateGame() {
     bestScore = score;
     writeCookies();
   }
-  displayScore.innerHTML = "Score<br>" + score;
-  displayBestScore.innerHTML = "Best<br>" + bestScore;
+  const lastScore = parseInt(displayScore.innerHTML);      
+  displayScore.innerHTML = score;            
+  if(!(score == 0 || displayScore.innerHTML == 0 || lastScore == undefined || score == lastScore)){
+    htmlAddedScore.innerHTML = `+${score - lastScore}`;         
+    htmlAddedScore.style.animationName = 'fly-out';
+    setTimeout(() => {
+      htmlAddedScore.style.animationName = "";
+      }, 1000);          
+  }           
+  
+  displayBestScore.innerHTML = bestScore;
 
 
   draw();
